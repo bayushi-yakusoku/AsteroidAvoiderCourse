@@ -6,10 +6,16 @@ using UnityEngine.InputSystem.Controls;
 
 public class PlayerMovement : MonoBehaviour
 {
+    [SerializeField] private float forceMagnitude;
+    [SerializeField] private float maxVelocity;
+
+    private new Rigidbody rigidbody;
+    private Vector3 movementDirection;
+
     // Start is called before the first frame update
     void Start()
     {
-        
+        rigidbody = GetComponent<Rigidbody>();
     }
 
     // Update is called once per frame
@@ -26,14 +32,24 @@ public class PlayerMovement : MonoBehaviour
                 return;
             }
 
-            Debug.Log($"Screen position: {screenPosition}");
-
             Vector3 worldPosition = Camera.main.ScreenToWorldPoint(screenPosition);
             worldPosition.z = transform.position.z;
 
-            Debug.Log($"World position: {worldPosition}");
-
-            transform.LookAt(worldPosition, Vector3.back);
+            //transform.LookAt(worldPosition, Vector3.back);
+            movementDirection = transform.position - worldPosition;
+            movementDirection.Normalize();
         }
+        else
+        {
+            movementDirection = Vector3.zero;
+        }
+    }
+
+    private void FixedUpdate()
+    {
+        rigidbody.AddForce(movementDirection * forceMagnitude, ForceMode.Force);
+
+        rigidbody.velocity = Vector3.ClampMagnitude(rigidbody.velocity, maxVelocity);
+
     }
 }
