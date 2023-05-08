@@ -23,6 +23,7 @@ public class PlayerMovement : MonoBehaviour
     void Start()
     {
         cam = Camera.main;
+
         rigidbody = GetComponent<Rigidbody>();
     }
 
@@ -58,8 +59,6 @@ public class PlayerMovement : MonoBehaviour
                 Debug.Log("Infinity detected!");
                 return;
             }
-
-            Debug.Log($"screenPosition: {screenPosition}");
 
             // Set Z distance from the camera for the world point.
             // Used by method ScreenToWorldPoint:
