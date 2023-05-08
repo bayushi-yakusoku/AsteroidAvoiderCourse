@@ -58,7 +58,7 @@ public class AsteroidController : MonoBehaviour
         if (!screenWrapAround) return;
 
         if (asteroidProperties.IsVisible) return;
-        Debug.LogError("invisible!");
+        //Debug.LogError("invisible!");
         Vector3 newPosition = transform.position;
 
         Vector3 viewportPosition = Camera.main.WorldToViewportPoint(transform.position);
