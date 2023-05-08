@@ -15,9 +15,15 @@ public class PlayerMovement : MonoBehaviour
     private new Rigidbody rigidbody;
     private Vector3 movementDirection;
 
+    private int roll = 0;
+
+    private Camera cam;
+
     // Start is called before the first frame update
     void Start()
     {
+        cam = Camera.main;
+
         rigidbody = GetComponent<Rigidbody>();
     }
 
@@ -41,6 +47,8 @@ public class PlayerMovement : MonoBehaviour
 
     private void TouchScreenManager()
     {
+        if (Touchscreen.current is null) return;
+
         if (Touchscreen.current.primaryTouch.press.isPressed)
         {
             Vector3 screenPosition = Touchscreen.current.primaryTouch.position.ReadValue();
@@ -52,16 +60,19 @@ public class PlayerMovement : MonoBehaviour
                 return;
             }
 
-            Vector3 worldPosition = Camera.main.ScreenToWorldPoint(screenPosition);
-            worldPosition.y = transform.position.y;
+            // Set Z distance from the camera for the world point.
+            // Used by method ScreenToWorldPoint:
+            screenPosition.z = transform.position.z - cam.transform.position.z;
 
-            //transform.LookAt(worldPosition, Vector3.back);
+            Vector3 worldPosition = cam.ScreenToWorldPoint(screenPosition);
+
             movementDirection = transform.position - worldPosition;
             movementDirection.Normalize();
         }
         else
         {
             movementDirection = Vector3.zero;
+            roll = 0;
         }
     }
 
@@ -69,7 +80,7 @@ public class PlayerMovement : MonoBehaviour
     {
         Vector3 newPosition = transform.position;
 
-        Vector3 viewportPosition = Camera.main.WorldToViewportPoint(transform.position);
+        Vector3 viewportPosition = cam.WorldToViewportPoint(transform.position);
 
         if (viewportPosition.x < 0)
             newPosition.x = -1f * (newPosition.x + 0.1f);
@@ -77,33 +88,29 @@ public class PlayerMovement : MonoBehaviour
             newPosition.x = -1f * (newPosition.x - 0.1f);
 
         if (viewportPosition.y < 0)
-            newPosition.z = -1f * (newPosition.z + 0.1f);
+            newPosition.y = -1f * (newPosition.y + 0.1f);
         else if (viewportPosition.y > 1)
-            newPosition.z = -1f * (newPosition.z - 0.1f);
+            newPosition.y = -1f * (newPosition.y - 0.1f);
 
         transform.position = newPosition;
     }
 
     private void Rotate()
     {
-        int roll = 0;
-
         if (movementDirection == Vector3.zero) return;
 
         Quaternion newRotation = Quaternion.Lerp(
                 transform.rotation,
-                Quaternion.LookRotation(movementDirection, Vector3.up),
+                Quaternion.LookRotation(movementDirection, Vector3.back),
                 Time.deltaTime * rotationSpeed
             );
 
-        if (newRotation.y > transform.rotation.y)
+        if (newRotation.z > transform.rotation.z)
         {
-            Debug.Log("Roll Right");
             roll = -1;
         }
-        else if (newRotation.y < transform.rotation.y)
+        else if (newRotation.z < transform.rotation.z)
         {
-            Debug.Log("Roll Left");
             roll = 1;
         }
         else
@@ -112,5 +119,43 @@ public class PlayerMovement : MonoBehaviour
         }
 
         transform.rotation = newRotation;
+    }
+
+    void OnGUI()
+    {
+        Event currentEvent = Event.current;
+        Vector2 screenPos = new()
+        {
+            x = currentEvent.mousePosition.x,
+            y = cam.pixelHeight - currentEvent.mousePosition.y
+        };
+
+        Vector3 point = cam.ScreenToWorldPoint(
+            new Vector3(screenPos.x, 
+                        screenPos.y, 
+                        transform.position.z - cam.transform.position.z
+                        )
+            );
+
+        GUILayout.BeginArea(new Rect(20, 20, 250, 120));
+        
+        GUILayout.Label("Screen pixels  : " + cam.pixelWidth + "*" + cam.pixelHeight);
+        GUILayout.Label("Screen position: " + screenPos);
+        GUILayout.Label("World position : " + point.ToString("F3"));
+
+        switch(roll)
+        {
+            case -1:
+                GUILayout.Label("Roll           : Left");
+                break;
+            case 0:
+                GUILayout.Label("Roll           : ");
+                break;
+            case 1:
+                GUILayout.Label("Roll           : Right");
+                break;
+        }
+
+        GUILayout.EndArea();
     }
 }
